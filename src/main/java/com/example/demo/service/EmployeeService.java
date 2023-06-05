@@ -18,8 +18,13 @@ public class EmployeeService {
     private final String employeeNotDFoundMessage = "Employee not found in directory";
     private final String employeeExists = "Employee already exists";
     private final String futureDate = "Date of birth cannot be a future/current date.";
-    @Autowired
+
     EmployeeRepository employeeRepository;
+
+    @Autowired
+    public EmployeeService(EmployeeRepository employeeRepository) {
+        this.employeeRepository = employeeRepository;
+    }
 
     public LocalDate parseDateOfBirth(String dateOfBirth) throws ApplicationException {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -36,8 +41,9 @@ public class EmployeeService {
     }
 
     public Integer addEmployee(EmployeeDTO employeeDTO) throws ApplicationException {
-        Optional<Employee> employeeAadhar = employeeRepository.findById(employeeDTO.getAadhar());
-        if (employeeAadhar.isEmpty()) throw new ApplicationException(employeeExists);
+        System.out.println(employeeDTO.getAadhar());
+        Optional<Employee> employeeAadhar = employeeRepository.findByAadhar(employeeDTO.getAadhar());
+        if (employeeAadhar != null) throw new ApplicationException(employeeExists);
         LocalDate parsedDateOfBirth = parseDateOfBirth(employeeDTO.getDateOfBirth());
         Integer age = calculateAge(String.valueOf(parsedDateOfBirth));
         Employee employee = Employee.builder()
@@ -51,7 +57,8 @@ public class EmployeeService {
     }
 
     public EmployeeDTO getEmployee(Integer aadhar) throws ApplicationException {
-        Optional<Employee> employeeInfo = employeeRepository.findById(aadhar);
+        Optional<Employee> employeeInfo = employeeRepository.findByAadhar(aadhar);
+        if (employeeInfo == null) throw new ApplicationException(employeeNotDFoundMessage);
         Employee employee = employeeInfo.orElseThrow(() -> new ApplicationException(employeeNotDFoundMessage));
         EmployeeDTO employeeDTO = EmployeeDTO.builder()
                 .aadhar(employee.getAadhar())
@@ -64,14 +71,14 @@ public class EmployeeService {
     }
 
     public void updateEmployee(Integer aadhar, String dept) throws ApplicationException {
-        Optional<Employee> employeeById = employeeRepository.findById(aadhar);
+        Optional<Employee> employeeById = employeeRepository.findByAadhar(aadhar);
         Employee employee = employeeById.orElseThrow(() -> new ApplicationException(employeeNotDFoundMessage));
         employee.setDept(dept);
         employeeRepository.save(employee);
     }
 
     public void deleteEmployee(Integer aadhar) throws ApplicationException {
-        Optional<Employee> employeeById = employeeRepository.findById(aadhar);
+        Optional<Employee> employeeById = employeeRepository.findByAadhar(aadhar);
         Employee employee = employeeById.orElseThrow(() -> new ApplicationException(employeeNotDFoundMessage));
         employeeRepository.deleteById(aadhar);
     }
